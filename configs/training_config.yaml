@@ -1,0 +1,25 @@
+training:
+  experiment_name: "predictive_maintenance_v1"
+  run_name_prefix: "pm_run"
+
+  # Cross-validation
+  cv_folds: 5
+
+  # Metrics to log in MLflow
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+    - "pr_auc"
+
+  # Artifacts to log
+  log_model: true
+  log_confusion_matrix: true
+  log_feature_importance: true
+
+monitoring:
+  drift_threshold: 0.1        # এর বেশি drift হলে alert
+  prediction_log_path: "data/reports/predictions.parquet"
+  reference_data_path: "data/processed/train.parquet"

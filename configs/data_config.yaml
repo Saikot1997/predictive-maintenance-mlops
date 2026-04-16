@@ -1,0 +1,27 @@
+data:
+  raw_path: "data/raw/predictive_maintenance.csv"
+  processed_train: "data/processed/train.parquet"
+  processed_test: "data/processed/test.parquet"
+  reports_path: "data/reports/"
+
+  # Dataset এর column names
+  target_col: "Machine failure"
+  failure_types:
+    - "TWF"   # Tool Wear Failure
+    - "HDF"   # Heat Dissipation Failure
+    - "PWF"   # Power Failure
+    - "OSF"   # Overstrain Failure
+    - "RNF"   # Random Failures
+
+  feature_cols:
+    - "Type"
+    - "Air temperature [K]"
+    - "Process temperature [K]"
+    - "Rotational speed [rpm]"
+    - "Torque [Nm]"
+    - "Tool wear [min]"
+
+  # Train/Test split
+  test_size: 0.2
+  random_state: 42
+  stratify: true

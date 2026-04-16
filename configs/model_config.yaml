@@ -1,0 +1,23 @@
+models:
+  random_forest:
+    n_estimators: 200
+    max_depth: 15
+    min_samples_split: 5
+    min_samples_leaf: 2
+    class_weight: "balanced"
+    n_jobs: -1
+    random_state: 42
+
+  xgboost:
+    n_estimators: 300
+    max_depth: 7
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    scale_pos_weight: 10   # imbalanced dataset handle
+    eval_metric: "aucpr"
+    random_state: 42
+
+  best_model_metric: "f1_score"  # এই metric দিয়ে best model select হবে
+  model_save_path: "models/trained/"
+  registered_model_name: "predictive_maintenance_model"
