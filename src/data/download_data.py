@@ -7,7 +7,6 @@ import shutil
 from pathlib import Path
 import yaml
 
-
 def download_dataset(config_path: str = "configs/data_config.yaml") -> None:
     """Dataset download এবং সঠিক জায়গায় রাখো।"""
     with open(config_path) as f:
