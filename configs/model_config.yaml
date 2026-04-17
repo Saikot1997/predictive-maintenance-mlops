@@ -14,7 +14,7 @@ models:
     learning_rate: 0.05
     subsample: 0.8
     colsample_bytree: 0.8
-    scale_pos_weight: 10   # imbalanced dataset handle
+    scale_pos_weight: 30   # imbalanced dataset handle
     eval_metric: "aucpr"
     random_state: 42
 

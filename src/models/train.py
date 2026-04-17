@@ -110,7 +110,7 @@ def train_random_forest(X_train, y_train, X_test, y_test,
             logger.warning("Only one class in y_train — using uniform weights")
             sample_w = np.ones(len(y_train), dtype=float)
         else:
-            sample_w = compute_sample_weight(class_weight="balanced", y=y_train)
+            sample_w = compute_sample_weight(class_weight="balanced", y=y_train.to_numpy())
 
         model = RandomForestClassifier(**rf_params)
         model.fit(X_train, y_train, sample_weight=sample_w)
@@ -126,7 +126,7 @@ def train_random_forest(X_train, y_train, X_test, y_test,
 
         # Confusion matrix artifact
         cm_path = plot_confusion_matrix(y_test, y_pred, "RandomForest")
-        mlflow.log_artifact(cm_path, "plots")
+        # mlflow.log_artifact(cm_path, "plots")  # skipped: artifact path not local
 
         # Feature importance log করো
         fi = pd.Series(model.feature_importances_,
@@ -139,7 +139,7 @@ def train_random_forest(X_train, y_train, X_test, y_test,
         fi_path = "/tmp/feature_importance_rf.png"
         plt.savefig(fi_path, dpi=100)
         plt.close()
-        mlflow.log_artifact(fi_path, "plots")
+        # mlflow.log_artifact(fi_path, "plots")  # skipped: artifact path not local
 
         # Model save করো
         signature = infer_signature(X_train, y_pred)
@@ -183,7 +183,7 @@ def train_xgboost(X_train, y_train, X_test, y_test,
         mlflow.log_metrics(metrics)
 
         cm_path = plot_confusion_matrix(y_test, y_pred, "XGBoost")
-        mlflow.log_artifact(cm_path, "plots")
+        # mlflow.log_artifact(cm_path, "plots")  # skipped: artifact path not local
 
         signature = infer_signature(X_train, y_pred)
         mlflow.xgboost.log_model(

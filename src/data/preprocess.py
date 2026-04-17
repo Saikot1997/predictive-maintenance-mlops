@@ -162,14 +162,20 @@ def run_preprocessing(config_path: str = "configs/data_config.yaml") -> None:
         "torque",
         "tool_wear",
     ]
-    X_train = scale_features(pd.DataFrame(X_train), numeric_features, fit=True)
-    X_test  = scale_features(pd.DataFrame(X_test),  numeric_features, fit=False)
+    X_train_scaled = scale_features(pd.DataFrame(X_train.values, columns=X_train.columns), numeric_features, fit=True)
+    X_test_scaled  = scale_features(pd.DataFrame(X_test.values,  columns=X_test.columns),  numeric_features, fit=False)
 
     # Save
     Path(data_cfg["processed_train"]).parent.mkdir(parents=True, exist_ok=True)
 
-    train_df = pd.concat([X_train, y_train.reset_index(drop=True)], axis=1)
-    test_df  = pd.concat([X_test,  y_test.reset_index(drop=True)],  axis=1)
+    y_train_reset = y_train.reset_index(drop=True).astype(int)
+    y_test_reset  = y_test.reset_index(drop=True).astype(int)
+
+    train_df = X_train_scaled.copy()
+    train_df["target"] = y_train_reset.values
+
+    test_df = X_test_scaled.copy()
+    test_df["target"] = y_test_reset.values
 
     train_df.to_parquet(data_cfg["processed_train"], index=False)
     test_df.to_parquet(data_cfg["processed_test"], index=False)
