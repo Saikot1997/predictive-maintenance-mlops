@@ -2,7 +2,6 @@
     remote = gdrive_remote
 ['remote "gdrive_remote"']
     url = gdrive://1c16jK2dycfQx_q-kSuo9rS7W4T2iT1AV
-    gdrive_client_id = REMOVED
-    gdrive_client_secret = REMOVED
+
 ['remote "local_remote"']
     url = /home/saikotdasjoy/dvc-storage

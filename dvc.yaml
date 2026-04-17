@@ -1,0 +1,44 @@
+stages:
+  preprocess:
+    cmd: python -m src.data.preprocess
+    deps:
+      - src/data/preprocess.py
+      - src/features/feature_engineering.py
+      - data/raw/predictive_maintenance.csv
+      - configs/data_config.yaml
+    outs:
+      - data/processed/train.parquet
+      - data/processed/test.parquet
+      - models/trained/scaler.pkl
+      - models/trained/label_encoder.pkl
+    params:
+      - configs/data_config.yaml:
+          - data.test_size
+          - data.random_state
+
+  train:
+    cmd: python -m src.models.train
+    deps:
+      - src/models/train.py
+      - data/processed/train.parquet
+      - data/processed/test.parquet
+      - configs/model_config.yaml
+      - configs/training_config.yaml
+    outs:
+      - models/trained/random_forest.pkl
+      - models/trained/xgboost.pkl
+    params:
+      - configs/model_config.yaml:
+          - models.random_forest
+          - models.xgboost
+
+  evaluate:
+    cmd: python -m src.models.evaluate
+    deps:
+      - src/models/evaluate.py
+      - data/processed/test.parquet
+      - models/trained/random_forest.pkl
+      - models/trained/xgboost.pkl
+    metrics:
+      - data/reports/metrics.json:
+          cache: false

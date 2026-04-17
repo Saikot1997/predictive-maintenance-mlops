@@ -4,6 +4,7 @@ RandomForest এবং XGBoost দুটো model train হবে।
 Best model automatically MLflow Model Registry তে register হবে।
 """
 import logging
+from sklearn.utils.class_weight import compute_sample_weight
 import os
 import yaml
 import pandas as pd
@@ -104,8 +105,12 @@ def train_random_forest(X_train, y_train, X_test, y_test,
     with mlflow.start_run(run_name="random_forest") as run:
         logger.info("Training RandomForest...")
 
-        # Sample weights (imbalanced data handle)
-        sample_w = compute_sample_weight("balanced", y_train)
+        # Safe sample weight computation
+        if len(np.unique(y_train)) < 2:
+            logger.warning("Only one class in y_train — using uniform weights")
+            sample_w = np.ones(len(y_train), dtype=float)
+        else:
+            sample_w = compute_sample_weight(class_weight="balanced", y=y_train)
 
         model = RandomForestClassifier(**rf_params)
         model.fit(X_train, y_train, sample_weight=sample_w)

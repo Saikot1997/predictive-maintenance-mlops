@@ -146,8 +146,11 @@ def run_preprocessing(config_path: str = "configs/data_config.yaml") -> None:
         X, y,
         test_size=data_cfg["test_size"],
         random_state=data_cfg["random_state"],
-        stratify=y if data_cfg["stratify"] else None
+        stratify=y,                    # ← This line must be active
     )
+
+    logger.info(f"Train failure rate: {y_train.mean():.4f} | Test failure rate: {y_test.mean():.4f}")
+    logger.info(f"Unique classes in y_train: {np.unique(y_train)}")
 
     # ── STEP 3: Scale numeric features — fit on X_train ONLY ──
     # This is the correct order: no test-set statistics leak into the scaler.

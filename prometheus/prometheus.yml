@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s       # প্রতি ১৫ সেকেন্ডে metrics pull করবে
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+  # FastAPI application metrics
+  - job_name: "fastapi_app"
+    static_configs:
+      - targets: ["api:8000"]
+    metrics_path: "/metrics"
+    scheme: "http"
+
+  # Prometheus নিজের metrics (self-monitoring)
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

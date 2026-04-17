@@ -1,0 +1,250 @@
+# version field removed — obsolete in Docker Compose V2 (docker compose v2.x)
+
+networks:
+  mlops-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mlflow_artifacts:
+  redis_data:
+  grafana_data:
+  prometheus_data:
+  bentoml_store:
+
+services:
+
+  # ── PostgreSQL: MLflow backend database ──────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: pm_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlflow_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mlflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - mlops-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mlflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MLflow Tracking Server ───────────────────────────
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: pm_mlflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlflow_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mlflow}
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_artifacts:/mlartifacts
+    networks:
+      - mlops-net
+    deploy:
+      resources:
+        limits:
+          memory: 3G          # Increased from default
+        reservations:
+          memory: 1.5G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+    restart: unless-stopped
+
+  # ── Redis: Prediction Cache ──────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: pm_redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mlops-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Zookeeper: Kafka এর জন্য লাগে ───────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: pm_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - mlops-net
+
+  # ── Apache Kafka: Message Streaming ─────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: pm_kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"  # external access from host machine
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - mlops-net
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── FastAPI Application ──────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pm_api
+    env_file:
+      - .env
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+    networks:
+      - mlops-net
+    restart: unless-stopped
+
+  # ── Kafka Producer (sensor simulator) ───────────────
+  kafka-producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pm_producer
+    command: python -m src.streaming.kafka_producer
+    env_file:
+      - .env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - mlops-net
+    restart: unless-stopped
+
+  # ── Kafka Consumer (real-time predictions) ───────────
+  kafka-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pm_consumer
+    command: python -m src.streaming.kafka_consumer
+    env_file:
+      - .env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CONSUMER_API_HOST: api
+      API_PORT: "8000"
+      # Note: Do NOT set API_HOST here — that overrides the bind address in other services.
+      # KAFKA_CONSUMER_API_HOST is used by kafka_consumer.py to reach the API container.
+    depends_on:
+      kafka:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - mlops-net
+    restart: unless-stopped
+
+  # ── Prometheus: Metrics Collection ──────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: pm_prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    depends_on:
+      - api
+    networks:
+      - mlops-net
+
+  # ── Grafana: Dashboards ──────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: pm_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - mlops-net
+
+  # ── BentoML Service (optional — ML-native serving) ──
+  bentoml:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pm_bentoml
+    # প্রথমে model BentoML store এ save করতে হবে:
+    # python -c "from src.api.bento_service import save_model_to_bentoml; save_model_to_bentoml()"
+    command: bentoml serve src.api.bento_service:PredictiveMaintenanceService --port 3001 --host 0.0.0.0
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./models:/app/models
+      - bentoml_store:/root/bentoml
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      - mlflow
+    networks:
+      - mlops-net
+    profiles:
+      - bentoml  # শুধু চালাতে: docker compose --profile bentoml up bentoml

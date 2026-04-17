@@ -1,0 +1,66 @@
+{
+  "title": "Predictive Maintenance MLOps",
+  "uid": "pm-mlops-v1",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total Predictions",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "sum(predictions_total)",
+        "legendFormat": "Total"
+      }],
+      "options": {"colorMode": "background"}
+    },
+    {
+      "type": "stat",
+      "title": "HIGH Risk Predictions",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "sum(predictions_total{risk_level=\"HIGH\"})",
+        "legendFormat": "High Risk"
+      }],
+      "options": {"colorMode": "background", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}]}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Request Rate (req/sec)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "rate(api_requests_total[5m])",
+        "legendFormat": "{{endpoint}} {{status}}"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "API Latency (P95)",
+      "gridPos": {"x": 0, "y": 10, "w": 12, "h": 6},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "histogram_quantile(0.95, rate(request_duration_seconds_bucket[5m]))",
+        "legendFormat": "p95 {{endpoint}}"
+      }]
+    },
+    {
+      "type": "stat",
+      "title": "Cache Hit Rate",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m]))",
+        "legendFormat": "Hit Rate"
+      }]
+    }
+  ],
+  "refresh": "10s",
+  "time": {"from": "now-1h", "to": "now"}
+}

@@ -1,0 +1,10 @@
+random_forest:
+  n_estimators: 200
+  max_depth: 15
+  random_state: 42
+
+xgboost:
+  n_estimators: 300
+  max_depth: 7
+  learning_rate: 0.05
+  random_state: 42
