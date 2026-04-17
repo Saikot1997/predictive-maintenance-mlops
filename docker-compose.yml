@@ -34,7 +34,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── MLflow Tracking Server ───────────────────────────
+  # ── MLflow Tracking Server (PostgreSQL) ───────────────────────────
   mlflow:
     build:
       context: .
@@ -53,18 +53,12 @@ services:
       - mlflow_artifacts:/mlartifacts
     networks:
       - mlops-net
-    deploy:
-      resources:
-        limits:
-          memory: 3G          # Increased from default
-        reservations:
-          memory: 1.5G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 15
-      start_period: 120s
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     restart: unless-stopped
 
   # ── Redis: Prediction Cache ──────────────────────────
