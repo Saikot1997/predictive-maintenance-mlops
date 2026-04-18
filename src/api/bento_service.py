@@ -3,13 +3,14 @@ BentoML 1.3.x service — ML-native model serving.
 Compatible with BentoML 1.3.22+.
 """
 
+from typing import Literal
+
 import bentoml
 import joblib
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from typing import Literal
 
 load_dotenv()
 
