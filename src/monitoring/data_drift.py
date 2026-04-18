@@ -47,7 +47,7 @@ def generate_drift_report(
     drift_report = Report(
         metrics=[
             DataDriftPreset(num_stattest="ks", cat_stattest="chi2"),
-            DatasetDriftMetric(threshold=threshold),
+            DatasetDriftMetric(),
             DataQualityPreset(),
         ]
     )
