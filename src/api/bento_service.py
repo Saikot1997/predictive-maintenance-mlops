@@ -107,9 +107,7 @@ class PredictiveMaintenanceService:
             probability = float(self.model.predict_proba(features)[0][1])
         except AttributeError:
             probability = float(prediction)
-        risk = (
-            "HIGH" if probability > 0.7 else "MEDIUM" if probability > 0.3 else "LOW"
-        )
+        risk = "HIGH" if probability > 0.7 else "MEDIUM" if probability > 0.3 else "LOW"
         return PredictionOutput(
             prediction=prediction,
             probability=round(probability, 4),
