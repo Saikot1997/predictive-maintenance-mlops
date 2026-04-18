@@ -16,13 +16,13 @@ built on the [AI4I 2020 Predictive Maintenance Dataset](https://www.kaggle.com/d
 ---
 
 ```
-╔══════════════════════════════════════╗
-║         🚧 PROJECT STATUS 🚧         ║
-╠══════════════════════════════════════╣
-║  ⚙  Development  : IN PROGRESS      ║
-║  🛠  Bug Fixing   : ONGOING          ║
-║  🚀  Improvements : ACTIVE          ║
-╚══════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           🚧 PROJECT STATUS 🚧                               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                ⚙  Development   : IN PROGRESS                                ║
+║                🛠  Bug Fixing    : ONGOING                                   ║
+║                🚀  Improvements  : ACTIVE                                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 ## ✨ Tech Stack
 
