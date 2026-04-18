@@ -72,7 +72,7 @@ def preprocess_input(data: dict) -> pd.DataFrame:
     df = pd.DataFrame(
         [
             {
-                "Type": type_encoded,
+                "Type": float(type_encoded),
                 "air_temperature": data["air_temperature"],
                 "process_temperature": data["process_temperature"],
                 "rotational_speed": data["rotational_speed"],
