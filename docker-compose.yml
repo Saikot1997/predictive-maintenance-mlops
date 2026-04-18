@@ -143,6 +143,8 @@ services:
 
   # ── Kafka Producer (sensor simulator) ───────────────
   kafka-producer:
+    healthcheck:
+      disable: true
     build:
       context: .
       dockerfile: Dockerfile
@@ -161,6 +163,8 @@ services:
 
   # ── Kafka Consumer (real-time predictions) ───────────
   kafka-consumer:
+    healthcheck:
+      disable: true
     build:
       context: .
       dockerfile: Dockerfile
