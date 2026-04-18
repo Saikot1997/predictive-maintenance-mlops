@@ -2,7 +2,6 @@
 BentoML 1.3.x service — ML-native model serving.
 Compatible with BentoML 1.3.22+.
 """
-import os
 
 import bentoml
 import joblib
