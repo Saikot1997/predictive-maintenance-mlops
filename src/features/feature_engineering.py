@@ -2,11 +2,12 @@
 নতুন features তৈরি করো — model এর performance বাড়ানোর জন্য।
 Domain knowledge ব্যবহার করে meaningful features create করা।
 """
+
 import logging
-import yaml
-import pandas as pd
+
 import numpy as np
-from pathlib import Path
+import pandas as pd
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -70,5 +71,7 @@ def run_feature_engineering(config_path: str = "configs/data_config.yaml") -> No
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     run_feature_engineering()

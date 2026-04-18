@@ -2,6 +2,7 @@
 FastAPI application — ML model এর REST API।
 Features: prediction endpoint, health check, Redis caching, Prometheus metrics।
 """
+
 import hashlib
 import json
 import logging
@@ -11,14 +12,14 @@ from contextlib import asynccontextmanager
 
 import redis
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from starlette.responses import Response
 
-from src.api.schemas import PredictionRequest, PredictionResponse, HealthResponse
+from src.api.schemas import HealthResponse, PredictionRequest, PredictionResponse
 from src.models.predict import predict
-from dotenv import load_dotenv
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -26,19 +27,13 @@ logger = logging.getLogger(__name__)
 
 # ── Prometheus Metrics ──────────────────────────────────
 REQUEST_COUNT = Counter(
-    "api_requests_total",
-    "Total API requests",
-    ["method", "endpoint", "status"]
+    "api_requests_total", "Total API requests", ["method", "endpoint", "status"]
 )
 PREDICTION_COUNT = Counter(
-    "predictions_total",
-    "Total predictions made",
-    ["result", "risk_level"]
+    "predictions_total", "Total predictions made", ["result", "risk_level"]
 )
 REQUEST_LATENCY = Histogram(
-    "request_duration_seconds",
-    "Request duration",
-    ["endpoint"]
+    "request_duration_seconds", "Request duration", ["endpoint"]
 )
 CACHE_HITS = Counter("cache_hits_total", "Redis cache hits")
 CACHE_MISSES = Counter("cache_misses_total", "Redis cache misses")
@@ -134,9 +129,9 @@ async def predict_endpoint(request: PredictionRequest):
     data = request.model_dump()
 
     # Cache key তৈরি করো (input এর hash)
-    cache_key = "pred:" + hashlib.md5(
-        json.dumps(data, sort_keys=True).encode()
-    ).hexdigest()
+    cache_key = (
+        "pred:" + hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
+    )
 
     # Cache check করো
     if redis_client:

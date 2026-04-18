@@ -2,14 +2,15 @@
 Prediction logic — FastAPI ও BentoML দুটোতেই ব্যবহার হবে।
 MLflow registry থেকে latest Production model load করে predict করে।
 """
-import os
+
 import logging
-import numpy as np
-import pandas as pd
+import os
+
+import joblib
 import mlflow
 import mlflow.pyfunc
-import joblib
-from pathlib import Path
+import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,7 +36,9 @@ def get_model():
                 logger.info(f"Model loaded from MLflow registry: {model_name}@champion")
             except Exception:
                 _model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
-                logger.info(f"Model loaded from MLflow registry: {model_name}/Production")
+                logger.info(
+                    f"Model loaded from MLflow registry: {model_name}/Production"
+                )
         except Exception as e:
             # Fallback: local pkl file থেকে load করো
             logger.warning(f"MLflow unavailable: {e}. Loading local model.")
@@ -66,14 +69,18 @@ def preprocess_input(data: dict) -> pd.DataFrame:
     type_encoded = encoder.transform([data["type"]])[0]
 
     # DataFrame তৈরি করো (column names must match training)
-    df = pd.DataFrame([{
-        "Type": type_encoded,
-        "air_temperature": data["air_temperature"],
-        "process_temperature": data["process_temperature"],
-        "rotational_speed": data["rotational_speed"],
-        "torque": data["torque"],
-        "tool_wear": data["tool_wear"],
-    }])
+    df = pd.DataFrame(
+        [
+            {
+                "Type": type_encoded,
+                "air_temperature": data["air_temperature"],
+                "process_temperature": data["process_temperature"],
+                "rotational_speed": data["rotational_speed"],
+                "torque": data["torque"],
+                "tool_wear": data["tool_wear"],
+            }
+        ]
+    )
 
     # Feature engineering FIRST (same order as training pipeline)
     df["temp_diff"] = df["process_temperature"] - df["air_temperature"]
@@ -84,8 +91,13 @@ def preprocess_input(data: dict) -> pd.DataFrame:
     df["torque_per_wear"] = df["torque"] / (df["tool_wear"] + 1)
 
     # Scale numeric columns AFTER feature engineering (matches training order)
-    numeric_cols = ["air_temperature", "process_temperature",
-                    "rotational_speed", "torque", "tool_wear"]
+    numeric_cols = [
+        "air_temperature",
+        "process_temperature",
+        "rotational_speed",
+        "torque",
+        "tool_wear",
+    ]
     df[numeric_cols] = scaler.transform(df[numeric_cols])
 
     return df

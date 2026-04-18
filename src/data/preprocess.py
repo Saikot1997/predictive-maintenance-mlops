@@ -2,16 +2,20 @@
 Raw data clean এবং processed data তৈরি করে।
 DVC pipeline এর প্রথম step।
 """
+
 import logging
-import yaml
-import pandas as pd
-import numpy as np
 from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
+import yaml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-import joblib
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +40,9 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         logger.warning(f"Missing values found:\n{missing[missing > 0]}")
         # Fill numeric columns with median (preserves rows, better than dropna)
         numeric_cols = df.select_dtypes(include="number").columns
-        df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median(numeric_only=True))
+        df[numeric_cols] = df[numeric_cols].fillna(
+            df[numeric_cols].median(numeric_only=True)
+        )
         # Fill categorical columns with mode
         cat_cols = df.select_dtypes(include="object").columns
         for col in cat_cols:
@@ -57,8 +63,11 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def encode_features(df: pd.DataFrame, fit: bool = True,
-                    encoder_path: str = "models/trained/label_encoder.pkl") -> pd.DataFrame:
+def encode_features(
+    df: pd.DataFrame,
+    fit: bool = True,
+    encoder_path: str = "models/trained/label_encoder.pkl",
+) -> pd.DataFrame:
     """Categorical features encode করো।
     'Type' column: L/M/H → 0/1/2
     fit=True মানে নতুন encoder তৈরি করো (training)
@@ -79,9 +88,12 @@ def encode_features(df: pd.DataFrame, fit: bool = True,
     return df
 
 
-def scale_features(df: pd.DataFrame, feature_cols: list,
-                   fit: bool = True,
-                   scaler_path: str = "models/trained/scaler.pkl") -> pd.DataFrame:
+def scale_features(
+    df: pd.DataFrame,
+    feature_cols: list,
+    fit: bool = True,
+    scaler_path: str = "models/trained/scaler.pkl",
+) -> pd.DataFrame:
     """Numeric features scale করো (StandardScaler: mean=0, std=1)।
     কেন scale করা লাগে: Rotational speed ৩০০০ RPM, Torque ৪০ Nm — এই দুটো খুব different scale।
     Model confuse হয়। Scale করলে সব same range এ আসে।
@@ -116,21 +128,26 @@ def run_preprocessing(config_path: str = "configs/data_config.yaml") -> None:
     df = encode_features(df, fit=True)
 
     # Rename columns — use clean names for everything downstream
-    df = df.rename(columns={
-        "Air temperature [K]": "air_temperature",
-        "Process temperature [K]": "process_temperature",
-        "Rotational speed [rpm]": "rotational_speed",
-        "Torque [Nm]": "torque",
-        "Tool wear [min]": "tool_wear",
-        "Machine failure": "target",
-    })
+    df = df.rename(
+        columns={
+            "Air temperature [K]": "air_temperature",
+            "Process temperature [K]": "process_temperature",
+            "Rotational speed [rpm]": "rotational_speed",
+            "Torque [Nm]": "torque",
+            "Tool wear [min]": "tool_wear",
+            "Machine failure": "target",
+        }
+    )
 
     # ── STEP 1: Feature engineering on RAW (unscaled) values ──
     # MUST run before scaling so physics-based features are computed on
     # real sensor units (Kelvin, RPM, Nm, minutes) — not z-scores.
     from src.features.feature_engineering import (
-        add_temperature_features, add_power_features, add_wear_features
+        add_power_features,
+        add_temperature_features,
+        add_wear_features,
     )
+
     df = add_temperature_features(df)
     df = add_power_features(df)
     df = add_wear_features(df)
@@ -143,13 +160,16 @@ def run_preprocessing(config_path: str = "configs/data_config.yaml") -> None:
     y = df["target"]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
+        X,
+        y,
         test_size=data_cfg["test_size"],
         random_state=data_cfg["random_state"],
-        stratify=y,                    # ← This line must be active
+        stratify=y,  # ← This line must be active
     )
 
-    logger.info(f"Train failure rate: {y_train.mean():.4f} | Test failure rate: {y_test.mean():.4f}")
+    logger.info(
+        f"Train failure rate: {y_train.mean():.4f} | Test failure rate: {y_test.mean():.4f}"
+    )
     logger.info(f"Unique classes in y_train: {np.unique(y_train)}")
 
     # ── STEP 3: Scale numeric features — fit on X_train ONLY ──
@@ -162,14 +182,20 @@ def run_preprocessing(config_path: str = "configs/data_config.yaml") -> None:
         "torque",
         "tool_wear",
     ]
-    X_train_scaled = scale_features(pd.DataFrame(X_train.values, columns=X_train.columns), numeric_features, fit=True)
-    X_test_scaled  = scale_features(pd.DataFrame(X_test.values,  columns=X_test.columns),  numeric_features, fit=False)
+    X_train_scaled = scale_features(
+        pd.DataFrame(X_train.values, columns=X_train.columns),
+        numeric_features,
+        fit=True,
+    )
+    X_test_scaled = scale_features(
+        pd.DataFrame(X_test.values, columns=X_test.columns), numeric_features, fit=False
+    )
 
     # Save
     Path(data_cfg["processed_train"]).parent.mkdir(parents=True, exist_ok=True)
 
     y_train_reset = y_train.reset_index(drop=True).astype(int)
-    y_test_reset  = y_test.reset_index(drop=True).astype(int)
+    y_test_reset = y_test.reset_index(drop=True).astype(int)
 
     train_df = X_train_scaled.copy()
     train_df["target"] = y_train_reset.values

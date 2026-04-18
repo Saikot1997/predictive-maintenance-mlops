@@ -1,6 +1,5 @@
-name: CI — Test & Lint
+name: CI - Test and Lint
 
-# কখন চলবে: যেকোনো branch এ push বা PR create হলে
 on:
   push:
     branches: ["**"]
@@ -9,73 +8,51 @@ on:
 
 jobs:
   lint-and-test:
-    name: Lint & Test (Python ${{ matrix.python-version }})
+    name: Lint and Test
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.11"]
-
     steps:
-      # Step 1: Code checkout
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Step 2: Python setup
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
           cache: pip
 
-      # Step 3: Dependencies install
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
 
-      # Step 4: Code format check (Black)
-      - name: Check code format (black)
+      - name: Check format (black)
         run: black --check src/ tests/
 
-      # Step 5: Import sort check
-      - name: Check import order (isort)
+      - name: Check imports (isort)
         run: isort --check-only --profile black src/ tests/
 
-      # Step 6: Lint check (flake8)
-      - name: Lint check (flake8)
+      - name: Lint (flake8)
         run: flake8 src/ tests/ --max-line-length=100
 
-      # Step 7: Tests run করো
-      - name: Run tests with coverage
-        run: |
-          pytest tests/ -v \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term-missing
+      - name: Run tests
+        run: pytest tests/ -v --cov=src --cov-report=xml
 
-      # Step 8: Coverage report upload (GitHub PR তে দেখা যাবে)
-      - name: Upload coverage report
+      - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
           fail_ci_if_error: false
 
-  # Docker build test (আসল push নয়, শুধু build হয় কি না check)
   docker-build-check:
-    name: Docker Build Verification
+    name: Docker Build Check
     runs-on: ubuntu-latest
     needs: lint-and-test
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image (no push)
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -83,3 +60,34 @@ jobs:
           tags: predictive-maintenance:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  data-quality-check:
+    name: Data Quality and Drift Check
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run preprocessing to generate data
+        run: python -m src.data.preprocess
+
+      - name: Run Evidently drift check
+        run: python -m src.monitoring.data_drift
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: data/reports/
+          retention-days: 7

@@ -2,16 +2,18 @@
 Trained model এর comprehensive evaluation।
 সব metrics calculate করো এবং report তৈরি করো।
 """
-import os
+
 import json
 import logging
-import yaml
-import pandas as pd
+import os
+from pathlib import Path
+
 import mlflow
 import mlflow.sklearn
-from sklearn.metrics import classification_report
-from pathlib import Path
+import pandas as pd
+import yaml
 from dotenv import load_dotenv
+from sklearn.metrics import classification_report
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -33,19 +35,21 @@ def load_production_model(model_name: str):
     # Fallback to legacy stage API
     versions = client.get_latest_versions(model_name, stages=["Production"])
     if not versions:
-        raise ValueError(f"No model found for '{model_name}' (tried alias 'champion' and stage 'Production')")
+        raise ValueError(
+            f"No model found for '{model_name}' (tried alias 'champion' and stage 'Production')"
+        )
     model_uri = f"models:/{model_name}/Production"
     model = mlflow.pyfunc.load_model(model_uri)
     logger.info(f"Loaded: {model_name} v{versions[0].version} (stage=Production)")
     return model
 
 
-def evaluate_model(model_name: str = "predictive_maintenance_model",
-                   config_path: str = "configs/data_config.yaml") -> dict:
+def evaluate_model(
+    model_name: str = "predictive_maintenance_model",
+    config_path: str = "configs/data_config.yaml",
+) -> dict:
     """Production model evaluate করো এবং metrics save করো।"""
-    mlflow.set_tracking_uri(
-        os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-    )
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 
     with open(config_path) as f:
         data_cfg = yaml.safe_load(f)["data"]
@@ -62,9 +66,9 @@ def evaluate_model(model_name: str = "predictive_maintenance_model",
     y_pred = model.predict(X_test)
 
     # Report
-    report = classification_report(y_test, y_pred,
-                                    target_names=["No Failure", "Failure"],
-                                    output_dict=True)
+    report = classification_report(
+        y_test, y_pred, target_names=["No Failure", "Failure"], output_dict=True
+    )
 
     # Save metrics as JSON (DVC metrics tracking এর জন্য)
     metrics = {

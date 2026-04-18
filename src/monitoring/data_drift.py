@@ -3,14 +3,20 @@ Evidently AI দিয়ে data drift detection।
 Reference data (training) vs Current data (production) compare করে।
 HTML report তৈরি করে — browser এ দেখা যাবে।
 """
+
 import logging
-import yaml
-import pandas as pd
-from pathlib import Path
 from datetime import datetime
-from evidently.report import Report
-from evidently.metric_preset import DataDriftPreset, DataQualityPreset, TargetDriftPreset
+from pathlib import Path
+
+import pandas as pd
+import yaml
+from evidently.metric_preset import (
+    DataDriftPreset,
+    DataQualityPreset,
+    TargetDriftPreset,
+)
 from evidently.metrics import DatasetDriftMetric
+from evidently.report import Report
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +44,13 @@ def generate_drift_report(
     feature_cols = [c for c in reference.columns if c != target_col]
 
     # ── Report 1: Data Drift ────────────────────────────
-    drift_report = Report(metrics=[
-        DataDriftPreset(num_stattest="ks", cat_stattest="chi2"),
-        DatasetDriftMetric(threshold=threshold),
-        DataQualityPreset(),
-    ])
+    drift_report = Report(
+        metrics=[
+            DataDriftPreset(num_stattest="ks", cat_stattest="chi2"),
+            DatasetDriftMetric(threshold=threshold),
+            DataQualityPreset(),
+        ]
+    )
     drift_report.run(
         reference_data=reference[feature_cols],
         current_data=current[feature_cols],
@@ -57,10 +65,13 @@ def generate_drift_report(
     # ── Report 2: Target Drift (label distribution change) ──
     if target_col in reference.columns and target_col in current.columns:
         from evidently import ColumnMapping
+
         col_map = ColumnMapping(target=target_col)
-        target_report = Report(metrics=[
-            TargetDriftPreset(),
-        ])
+        target_report = Report(
+            metrics=[
+                TargetDriftPreset(),
+            ]
+        )
         target_report.run(
             reference_data=reference[[target_col]],
             current_data=current[[target_col]],

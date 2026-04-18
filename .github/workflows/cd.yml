@@ -1,4 +1,4 @@
-name: CD — Build & Push Docker Image
+name: CD - Build and Push Docker Image
 
 # কখন চলবে: main branch এ push হলে শুধু
 on:

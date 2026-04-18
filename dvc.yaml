@@ -42,3 +42,14 @@ stages:
     metrics:
       - data/reports/metrics.json:
           cache: false
+  drift_check:
+    cmd: python -m src.monitoring.data_drift
+    deps:
+      - src/monitoring/data_drift.py
+      - data/processed/train.parquet
+      - data/processed/test.parquet
+      - configs/training_config.yaml
+    outs:
+      - data/reports:
+          cache: false
+          persist: true

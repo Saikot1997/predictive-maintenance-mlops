@@ -1,32 +1,46 @@
 """API request ও response schemas — Pydantic দিয়ে type validation।"""
-from pydantic import BaseModel, Field
+
 from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 class PredictionRequest(BaseModel):
     """Machine sensor readings।"""
+
     air_temperature: float = Field(
-        ..., ge=290.0, le=310.0,
+        ...,
+        ge=290.0,
+        le=310.0,
         description="Air temperature in Kelvin (290–310 K)",
     )
     process_temperature: float = Field(
-        ..., ge=300.0, le=320.0,
+        ...,
+        ge=300.0,
+        le=320.0,
         description="Process temperature in Kelvin",
     )
     rotational_speed: float = Field(
-        ..., ge=1000.0, le=3000.0,
+        ...,
+        ge=1000.0,
+        le=3000.0,
         description="Rotational speed in RPM",
     )
     torque: float = Field(
-        ..., ge=0.0, le=100.0,
+        ...,
+        ge=0.0,
+        le=100.0,
         description="Torque in Nm",
     )
     tool_wear: float = Field(
-        ..., ge=0.0, le=300.0,
+        ...,
+        ge=0.0,
+        le=300.0,
         description="Tool wear in minutes",
     )
     type: Literal["L", "M", "H"] = Field(
-        ..., description="Machine quality variant: L (Low), M (Medium), H (High)",
+        ...,
+        description="Machine quality variant: L (Low), M (Medium), H (High)",
     )
 
     class Config:
@@ -37,13 +51,14 @@ class PredictionRequest(BaseModel):
                 "rotational_speed": 1551,
                 "torque": 42.8,
                 "tool_wear": 0,
-                "type": "M"
+                "type": "M",
             }
         }
 
 
 class PredictionResponse(BaseModel):
     """Prediction result।"""
+
     prediction: int = Field(..., description="0 = No Failure, 1 = Failure")
     probability: float = Field(..., description="Failure probability (0.0–1.0)")
     failure_type: str = Field(..., description="Type of predicted failure")
@@ -55,5 +70,6 @@ class PredictionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """API health status।"""
+
     status: str
     redis: bool

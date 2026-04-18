@@ -2,10 +2,13 @@
 Kaggle থেকে dataset download করার script।
 Terminal থেকে: python -m src.data.download_data
 """
+
 import os
 import shutil
 from pathlib import Path
+
 import yaml
+
 
 def download_dataset(config_path: str = "configs/data_config.yaml") -> None:
     """Dataset download এবং সঠিক জায়গায় রাখো।"""
@@ -18,10 +21,7 @@ def download_dataset(config_path: str = "configs/data_config.yaml") -> None:
     dataset_slug = "stephanmatzka/predictive-maintenance-dataset-ai4i-2020"
     print(f"📥 Downloading: {dataset_slug}")
 
-    os.system(
-        f"kaggle datasets download -d {dataset_slug} "
-        f"-p {raw_path} --unzip"
-    )
+    os.system(f"kaggle datasets download -d {dataset_slug} " f"-p {raw_path} --unzip")
 
     # Rename করো যদি দরকার হয়
     downloaded = raw_path / "ai4i2020.csv"

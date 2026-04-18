@@ -1,21 +1,26 @@
 """Feature engineering tests।"""
-import pytest
+
 import pandas as pd
-import numpy as np
+import pytest
+
 from src.features.feature_engineering import (
-    add_temperature_features, add_power_features, add_wear_features
+    add_power_features,
+    add_temperature_features,
+    add_wear_features,
 )
 
 
 @pytest.fixture
 def sample_df():
-    return pd.DataFrame({
-        "air_temperature": [298.0, 300.0],
-        "process_temperature": [308.0, 310.0],
-        "rotational_speed": [1500.0, 2000.0],
-        "torque": [40.0, 55.0],
-        "tool_wear": [50.0, 100.0],
-    })
+    return pd.DataFrame(
+        {
+            "air_temperature": [298.0, 300.0],
+            "process_temperature": [308.0, 310.0],
+            "rotational_speed": [1500.0, 2000.0],
+            "torque": [40.0, 55.0],
+            "tool_wear": [50.0, 100.0],
+        }
+    )
 
 
 def test_temperature_features_added(sample_df):

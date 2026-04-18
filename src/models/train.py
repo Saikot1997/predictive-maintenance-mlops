@@ -3,31 +3,38 @@ Model training with full MLflow experiment tracking।
 RandomForest এবং XGBoost দুটো model train হবে।
 Best model automatically MLflow Model Registry তে register হবে।
 """
+
 import logging
-from sklearn.utils.class_weight import compute_sample_weight
 import os
-import yaml
-import pandas as pd
-import numpy as np
+from pathlib import Path
+
+import joblib
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
 import mlflow.xgboost
+import numpy as np
+import pandas as pd
+import yaml
+from dotenv import load_dotenv
 from mlflow.models import infer_signature
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, confusion_matrix,
-    average_precision_score
+    accuracy_score,
+    average_precision_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
 from sklearn.utils.class_weight import compute_sample_weight
 from xgboost import XGBClassifier
-import joblib
-from pathlib import Path
-from dotenv import load_dotenv
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -80,13 +87,21 @@ def plot_confusion_matrix(y_true, y_pred, model_name: str) -> str:
     ax.set_xlabel("Predicted", fontsize=12)
     ax.set_ylabel("Actual", fontsize=12)
     ax.set_title(f"Confusion Matrix — {model_name}", fontsize=13)
-    ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
     ax.set_xticklabels(["No Fail", "Fail"])
     ax.set_yticklabels(["No Fail", "Fail"])
     for i in range(2):
         for j in range(2):
-            ax.text(j, i, cm[i, j], ha="center", va="center", fontsize=14,
-                    color="white" if cm[i, j] > cm.max() / 2 else "black")
+            ax.text(
+                j,
+                i,
+                cm[i, j],
+                ha="center",
+                va="center",
+                fontsize=14,
+                color="white" if cm[i, j] > cm.max() / 2 else "black",
+            )
     plt.tight_layout()
     path = f"/tmp/cm_{model_name}.png"
     plt.savefig(path, dpi=100, bbox_inches="tight")
@@ -94,8 +109,9 @@ def plot_confusion_matrix(y_true, y_pred, model_name: str) -> str:
     return path
 
 
-def train_random_forest(X_train, y_train, X_test, y_test,
-                         model_cfg: dict, train_cfg: dict) -> tuple:
+def train_random_forest(
+    X_train, y_train, X_test, y_test, model_cfg: dict, train_cfg: dict
+) -> tuple:
     """RandomForest train করো এবং MLflow এ log করো।"""
     rf_params = model_cfg["models"]["random_forest"]
     exp_name = train_cfg["training"]["experiment_name"]
@@ -110,7 +126,9 @@ def train_random_forest(X_train, y_train, X_test, y_test,
             logger.warning("Only one class in y_train — using uniform weights")
             sample_w = np.ones(len(y_train), dtype=float)
         else:
-            sample_w = compute_sample_weight(class_weight="balanced", y=y_train.to_numpy())
+            sample_w = compute_sample_weight(
+                class_weight="balanced", y=y_train.to_numpy()
+            )
 
         model = RandomForestClassifier(**rf_params)
         model.fit(X_train, y_train, sample_weight=sample_w)
@@ -125,16 +143,17 @@ def train_random_forest(X_train, y_train, X_test, y_test,
         mlflow.log_metrics(metrics)
 
         # Confusion matrix artifact
-        cm_path = plot_confusion_matrix(y_test, y_pred, "RandomForest")
-        # mlflow.log_artifact(cm_path, "plots")  # skipped: artifact path not local
+        plot_confusion_matrix(y_test, y_pred, "RandomForest")
 
         # Feature importance log করো
-        fi = pd.Series(model.feature_importances_,
-                       index=X_train.columns).sort_values(ascending=False)
+        fi = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(
+            ascending=False
+        )
         fig, ax = plt.subplots(figsize=(8, 5))
         fi.head(10).plot(kind="bar", ax=ax, color="#4f86c6")
         ax.set_title("Top 10 Feature Importances")
-        ax.set_xlabel("Feature"); ax.set_ylabel("Importance")
+        ax.set_xlabel("Feature")
+        ax.set_ylabel("Importance")
         plt.tight_layout()
         fi_path = "/tmp/feature_importance_rf.png"
         plt.savefig(fi_path, dpi=100)
@@ -144,19 +163,23 @@ def train_random_forest(X_train, y_train, X_test, y_test,
         # Model save করো
         signature = infer_signature(X_train, y_pred)
         mlflow.sklearn.log_model(
-            model, "model",
+            model,
+            "model",
             signature=signature,
             registered_model_name=None,  # Best model পরে register হবে
         )
 
         run_id = run.info.run_id
-        logger.info(f"RandomForest | F1: {metrics['f1_score']:.4f} | ROC-AUC: {metrics['roc_auc']:.4f}")
+        logger.info(
+            f"RandomForest | F1: {metrics['f1_score']:.4f} | ROC-AUC: {metrics['roc_auc']:.4f}"
+        )
 
     return model, metrics, run_id
 
 
-def train_xgboost(X_train, y_train, X_test, y_test,
-                  model_cfg: dict, train_cfg: dict) -> tuple:
+def train_xgboost(
+    X_train, y_train, X_test, y_test, model_cfg: dict, train_cfg: dict
+) -> tuple:
     """XGBoost train করো এবং MLflow এ log করো।"""
     xgb_params = model_cfg["models"]["xgboost"]
     exp_name = train_cfg["training"]["experiment_name"]
@@ -170,9 +193,7 @@ def train_xgboost(X_train, y_train, X_test, y_test,
             **xgb_params,
             verbosity=0,
         )
-        model.fit(X_train, y_train,
-                  eval_set=[(X_test, y_test)],
-                  verbose=False)
+        model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
         y_pred = model.predict(X_test)
         y_prob = model.predict_proba(X_test)[:, 1]
@@ -182,24 +203,27 @@ def train_xgboost(X_train, y_train, X_test, y_test,
         mlflow.log_params(xgb_params)
         mlflow.log_metrics(metrics)
 
-        cm_path = plot_confusion_matrix(y_test, y_pred, "XGBoost")
-        # mlflow.log_artifact(cm_path, "plots")  # skipped: artifact path not local
+        plot_confusion_matrix(y_test, y_pred, "XGBoost")
 
         signature = infer_signature(X_train, y_pred)
         mlflow.xgboost.log_model(
-            model, "model",
+            model,
+            "model",
             signature=signature,
             registered_model_name=None,
         )
 
         run_id = run.info.run_id
-        logger.info(f"XGBoost | F1: {metrics['f1_score']:.4f} | ROC-AUC: {metrics['roc_auc']:.4f}")
+        logger.info(
+            f"XGBoost | F1: {metrics['f1_score']:.4f} | ROC-AUC: {metrics['roc_auc']:.4f}"
+        )
 
     return model, metrics, run_id
 
 
-def register_best_model(rf_metrics, xgb_metrics, rf_run_id, xgb_run_id,
-                        model_cfg: dict) -> None:
+def register_best_model(
+    rf_metrics, xgb_metrics, rf_run_id, xgb_run_id, model_cfg: dict
+) -> None:
     """Best model MLflow Model Registry তে register করো।"""
     metric = model_cfg["models"]["best_model_metric"]
     model_name = model_cfg["models"]["registered_model_name"]
@@ -239,13 +263,11 @@ def register_best_model(rf_metrics, xgb_metrics, rf_run_id, xgb_run_id,
             stage="Production",
             archive_existing_versions=True,
         )
-        logger.info(f"✅ Model promoted to Production stage (legacy stage API)!")
+        logger.info("✅ Model promoted to Production stage (legacy stage API)!")
 
 
 def main():
-    mlflow.set_tracking_uri(
-        os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-    )
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 
     data_cfg, model_cfg, train_cfg = load_configs()
     X_train, X_test, y_train, y_test, feature_cols = load_data(data_cfg)

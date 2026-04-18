@@ -2,9 +2,11 @@
 Kafka Consumer — sensor data receive করে real-time prediction করে।
 confluent-kafka library ব্যবহার করা হয়েছে।
 """
+
 import json
 import logging
 import os
+
 import requests
 from confluent_kafka import Consumer, KafkaError
 from dotenv import load_dotenv
@@ -19,14 +21,16 @@ def run_consumer():
     # Use KAFKA_CONSUMER_API_HOST to avoid collision with API_HOST=0.0.0.0 (bind address)
     api_host = os.getenv("KAFKA_CONSUMER_API_HOST", os.getenv("API_HOST", "localhost"))
     api_port = os.getenv("API_PORT", "8000")
-    api_url  = f"http://{api_host}:{api_port}/predict"
+    api_url = f"http://{api_host}:{api_port}/predict"
 
-    consumer = Consumer({
-        "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
-        "group.id": "ml-prediction-group",
-        "auto.offset.reset": "latest",
-        "enable.auto.commit": False,  # Fix: manual commit prevents message loss on API failure
-    })
+    consumer = Consumer(
+        {
+            "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+            "group.id": "ml-prediction-group",
+            "auto.offset.reset": "latest",
+            "enable.auto.commit": False,  # Fix: manual commit prevents message loss on API failure
+        }
+    )
     consumer.subscribe([topic])
     logger.info(f"Consumer listening on: {topic}")
 
@@ -53,8 +57,11 @@ def run_consumer():
 
             # API কে prediction request পাঠাও
             try:
-                payload = {k: v for k, v in data_msg.items()
-                           if k not in ["machine_id", "timestamp"]}
+                payload = {
+                    k: v
+                    for k, v in data_msg.items()
+                    if k not in ["machine_id", "timestamp"]
+                }
                 response = requests.post(api_url, json=payload, timeout=5)
                 response.raise_for_status()
                 result = response.json()
@@ -66,7 +73,9 @@ def run_consumer():
                         f"Failure: {result['failure_type']}"
                     )
                 else:
-                    logger.debug(f"OK | Machine: {machine_id} | Risk: {result.get('risk_level')}")
+                    logger.debug(
+                        f"OK | Machine: {machine_id} | Risk: {result.get('risk_level')}"
+                    )
 
                 # Manual commit — only after successful prediction
                 consumer.commit(asynchronous=False)

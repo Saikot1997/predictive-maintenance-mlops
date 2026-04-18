@@ -2,12 +2,14 @@
 Kafka Producer — real-time sensor data stream simulate করে।
 confluent-kafka library ব্যবহার করা হয়েছে (maintained, Python 3.11+ compatible)।
 """
+
 import json
 import logging
 import os
-import time
 import random
+import time
 from datetime import datetime, timezone
+
 from confluent_kafka import Producer
 from dotenv import load_dotenv
 
@@ -23,12 +25,14 @@ def delivery_report(err, msg):
 
 def create_producer() -> Producer:
     """confluent-kafka Producer তৈরি করো।"""
-    return Producer({
-        "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
-        "acks": "all",
-        "retries": 3,
-        "linger.ms": 5,
-    })
+    return Producer(
+        {
+            "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+            "acks": "all",
+            "retries": 3,
+            "linger.ms": 5,
+        }
+    )
 
 
 def generate_sensor_reading(machine_id: str) -> dict:

@@ -3,14 +3,17 @@ BentoML 1.x service — ML-native model serving।
 BentoML 1.x এর নতুন @bentoml.service decorator API ব্যবহার করা হয়েছে।
 MLflow registry থেকে model নিয়ে BentoML এ save করে serve করে।
 """
+
 import os
-import numpy as np
+from typing import Literal
+
 import bentoml
 import mlflow
 import mlflow.sklearn
-from pydantic import BaseModel
-from typing import Literal
+import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -19,7 +22,7 @@ load_dotenv()
 def save_model_to_bentoml() -> str:
     """MLflow Production model BentoML model store এ save করো।
     এটা একবারই run করতে হবে।
-    Usage: python -c "from src.api.bento_service import save_model_to_bentoml; save_model_to_bentoml()"
+    Usage: python -c "from src.api.bento_service import save_model_to_bentoml; save_model_to_bentoml
     """
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     mlflow.set_tracking_uri(tracking_uri)
@@ -32,7 +35,10 @@ def save_model_to_bentoml() -> str:
     bento_model = bentoml.sklearn.save_model(
         "pm_model",
         sklearn_model,
-        metadata={"description": "Predictive Maintenance Model", "dataset": "AI4I 2020"},
+        metadata={
+            "description": "Predictive Maintenance Model",
+            "dataset": "AI4I 2020",
+        },
     )
     print(f"Saved to BentoML: {bento_model.tag}")
     return str(bento_model.tag)
@@ -85,8 +91,9 @@ class PredictiveMaintenanceService:
         IMPORTANT: LabelEncoder alphabetically sorts: H=0, L=1, M=2.
         Hardcoding L=0,M=1,H=2 would be WRONG — always load the saved encoder.
         """
-        import pandas as pd
         import joblib
+        import pandas as pd
+
         # Load saved encoder to get correct mapping (H=0, L=1, M=2 alphabetically)
         try:
             encoder = joblib.load("models/trained/label_encoder.pkl")
@@ -101,25 +108,34 @@ class PredictiveMaintenanceService:
         torque_wear = inp.torque / (inp.tool_wear + 1)
 
         # Build DataFrame with feature engineering first, then scale
-        df = pd.DataFrame([{
-            "Type": type_enc,
-            "air_temperature": inp.air_temperature,
-            "process_temperature": inp.process_temperature,
-            "rotational_speed": inp.rotational_speed,
-            "torque": inp.torque,
-            "tool_wear": inp.tool_wear,
-            "temp_diff": temp_diff,
-            "temp_ratio": temp_ratio,
-            "power_consumption": power,
-            "power_wear_interaction": power * inp.tool_wear,
-            "wear_speed_ratio": wear_speed,
-            "torque_per_wear": torque_wear,
-        }])
+        df = pd.DataFrame(
+            [
+                {
+                    "Type": type_enc,
+                    "air_temperature": inp.air_temperature,
+                    "process_temperature": inp.process_temperature,
+                    "rotational_speed": inp.rotational_speed,
+                    "torque": inp.torque,
+                    "tool_wear": inp.tool_wear,
+                    "temp_diff": temp_diff,
+                    "temp_ratio": temp_ratio,
+                    "power_consumption": power,
+                    "power_wear_interaction": power * inp.tool_wear,
+                    "wear_speed_ratio": wear_speed,
+                    "torque_per_wear": torque_wear,
+                }
+            ]
+        )
         # Apply saved scaler to numeric columns
         try:
             scaler = joblib.load("models/trained/scaler.pkl")
-            numeric_cols = ["air_temperature", "process_temperature",
-                            "rotational_speed", "torque", "tool_wear"]
+            numeric_cols = [
+                "air_temperature",
+                "process_temperature",
+                "rotational_speed",
+                "torque",
+                "tool_wear",
+            ]
             df[numeric_cols] = scaler.transform(df[numeric_cols])
         except Exception:
             pass  # Fallback: serve unscaled if scaler unavailable
