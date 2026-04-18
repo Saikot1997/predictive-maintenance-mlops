@@ -30,17 +30,13 @@ def get_model():
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
         mlflow.set_tracking_uri(tracking_uri)
         try:
-            # Try alias first (MLflow 2.x), fallback to legacy stage
             try:
                 _model = mlflow.pyfunc.load_model(f"models:/{model_name}@champion")
                 logger.info(f"Model loaded from MLflow registry: {model_name}@champion")
             except Exception:
                 _model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
-                logger.info(
-                    f"Model loaded from MLflow registry: {model_name}/Production"
-                )
+                logger.info(f"Model loaded from MLflow registry: {model_name}/Production")
         except Exception as e:
-            # Fallback: local pkl file থেকে load করো
             logger.warning(f"MLflow unavailable: {e}. Loading local model.")
             local_path = "models/trained/xgboost.pkl"
             _model = joblib.load(local_path)
@@ -65,19 +61,17 @@ def preprocess_input(data: dict) -> pd.DataFrame:
     """
     scaler, encoder = get_preprocessors()
 
-    # Type encode করো
     type_encoded = encoder.transform([data["type"]])[0]
 
-    # DataFrame তৈরি করো (column names must match training)
     df = pd.DataFrame(
         [
             {
                 "Type": float(type_encoded),
-                "air_temperature": data["air_temperature"],
-                "process_temperature": data["process_temperature"],
-                "rotational_speed": data["rotational_speed"],
-                "torque": data["torque"],
-                "tool_wear": data["tool_wear"],
+                "air_temperature": float(data["air_temperature"]),
+                "process_temperature": float(data["process_temperature"]),
+                "rotational_speed": float(data["rotational_speed"]),
+                "torque": float(data["torque"]),
+                "tool_wear": float(data["tool_wear"]),
             }
         ]
     )
@@ -90,7 +84,10 @@ def preprocess_input(data: dict) -> pd.DataFrame:
     df["wear_speed_ratio"] = df["tool_wear"] / (df["rotational_speed"] + 1e-8)
     df["torque_per_wear"] = df["torque"] / (df["tool_wear"] + 1)
 
-    # Scale numeric columns AFTER feature engineering (matches training order)
+    # Cast ALL columns to float64 — MLflow model signature requires this
+    df = df.astype(np.float64)
+
+    # Scale numeric columns AFTER feature engineering
     numeric_cols = [
         "air_temperature",
         "process_temperature",
@@ -106,26 +103,19 @@ def preprocess_input(data: dict) -> pd.DataFrame:
 FAILURE_TYPES = {
     0: "No Failure",
     1: "Machine Failure",
-    # Note: this is a binary classifier — prediction is 0 or 1 only.
-    # Specific failure type classification (TWF/HDF/PWF/OSF/RNF)
-    # would require a separate multi-label model.
 }
 
 
 def predict(data: dict) -> dict:
-    """Single sample prediction।
-    Returns: prediction (0/1), probability, failure_type string
-    """
+    """Single sample prediction।"""
     model = get_model()
     df = preprocess_input(data)
 
     prediction = int(model.predict(df)[0])
 
-    # Probability
     if hasattr(model, "predict_proba"):
         prob = float(model.predict_proba(df)[0][1])
     else:
-        # MLflow pyfunc এর জন্য
         try:
             prob = float(model.predict(df)[0])
         except Exception:

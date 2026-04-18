@@ -2,49 +2,14 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PredictionRequest(BaseModel):
     """Machine sensor readings।"""
 
-    air_temperature: float = Field(
-        ...,
-        ge=290.0,
-        le=310.0,
-        description="Air temperature in Kelvin (290–310 K)",
-    )
-    process_temperature: float = Field(
-        ...,
-        ge=300.0,
-        le=320.0,
-        description="Process temperature in Kelvin",
-    )
-    rotational_speed: float = Field(
-        ...,
-        ge=1000.0,
-        le=3000.0,
-        description="Rotational speed in RPM",
-    )
-    torque: float = Field(
-        ...,
-        ge=0.0,
-        le=100.0,
-        description="Torque in Nm",
-    )
-    tool_wear: float = Field(
-        ...,
-        ge=0.0,
-        le=300.0,
-        description="Tool wear in minutes",
-    )
-    type: Literal["L", "M", "H"] = Field(
-        ...,
-        description="Machine quality variant: L (Low), M (Medium), H (High)",
-    )
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "air_temperature": 298.1,
                 "process_temperature": 308.6,
@@ -54,6 +19,14 @@ class PredictionRequest(BaseModel):
                 "type": "M",
             }
         }
+    )
+
+    air_temperature: float = Field(..., ge=290.0, le=310.0, description="Air temperature in Kelvin (290–310 K)")
+    process_temperature: float = Field(..., ge=300.0, le=320.0, description="Process temperature in Kelvin")
+    rotational_speed: float = Field(..., ge=1000.0, le=3000.0, description="Rotational speed in RPM")
+    torque: float = Field(..., ge=0.0, le=100.0, description="Torque in Nm")
+    tool_wear: float = Field(..., ge=0.0, le=300.0, description="Tool wear in minutes")
+    type: Literal["L", "M", "H"] = Field(..., description="Machine quality variant: L (Low), M (Medium), H (High)")
 
 
 class PredictionResponse(BaseModel):
@@ -62,9 +35,7 @@ class PredictionResponse(BaseModel):
     prediction: int = Field(..., description="0 = No Failure, 1 = Failure")
     probability: float = Field(..., description="Failure probability (0.0–1.0)")
     failure_type: str = Field(..., description="Type of predicted failure")
-    risk_level: Literal["LOW", "MEDIUM", "HIGH"] = Field(
-        ..., description="Risk assessment level"
-    )
+    risk_level: Literal["LOW", "MEDIUM", "HIGH"] = Field(..., description="Risk assessment level")
     cached: bool = Field(..., description="Was this result served from cache?")
 
 
