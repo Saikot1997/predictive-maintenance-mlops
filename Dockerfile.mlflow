@@ -1,6 +1,5 @@
 FROM python:3.11-slim
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     curl \
@@ -8,30 +7,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install MLflow
 RUN pip install --no-cache-dir \
     mlflow==2.13.0 \
     psycopg2-binary==2.9.9 \
     gunicorn
 
-RUN mkdir -p /mlartifacts
+RUN mkdir -p /mlartifacts && chmod 777 /mlartifacts
 
-# CMD to start MLflow with PostgreSQL
 CMD ["bash", "-c", "\
-  echo '=== MLflow Starting ===' && \
   echo 'Waiting for PostgreSQL...' && \
   for i in $(seq 1 60); do \
     if pg_isready -h postgres -p 5432 -U ${POSTGRES_USER} -q; then \
-      echo '✅ PostgreSQL is ready!' && \
-      break; \
+      echo 'PostgreSQL ready!' && break; \
     fi; \
-    echo \"Waiting for Postgres... (attempt $i/60)\" && \
     sleep 3; \
   done && \
-  echo '🚀 Starting MLflow server on http://0.0.0.0:5000' && \
   mlflow server \
     --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB} \
-    --default-artifact-root /mlartifacts \
+    --artifacts-destination /mlartifacts \
+    --serve-artifacts \
     --host 0.0.0.0 \
     --port 5000"]
 
