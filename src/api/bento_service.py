@@ -91,7 +91,6 @@ def _build_features(inp: SensorInput) -> pd.DataFrame:
     return df
 
 
-
 @bentoml.service(name="predictive_maintenance_svc")
 class PredictiveMaintenanceService:
     """BentoML 1.3.x service for predictive maintenance."""
