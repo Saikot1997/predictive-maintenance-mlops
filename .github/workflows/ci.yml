@@ -58,8 +58,7 @@ jobs:
           context: .
           push: false
           tags: predictive-maintenance:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+
 
   data-quality-check:
     name: Data Quality and Drift Check
