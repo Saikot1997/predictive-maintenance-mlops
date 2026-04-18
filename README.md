@@ -14,7 +14,12 @@ built on the [AI4I 2020 Predictive Maintenance Dataset](https://www.kaggle.com/d
 **Model performance (XGBoost Champion):** F1 = **0.824** | ROC-AUC = **0.987**
 
 ---
-
+╔══════════════════════════════╗
+║        PROJECT STATUS        ║
+╠══════════════════════════════╣
+║  ⚙ Under development         ║
+║  🛠 Bug fixing ongoing       ║
+╚══════════════════════════════╝
 ## ✨ Tech Stack
 
 | Category | Tools |
@@ -31,13 +36,6 @@ built on the [AI4I 2020 Predictive Maintenance Dataset](https://www.kaggle.com/d
 | **Code Quality** | pre-commit, black, flake8, isort, pytest |
 
 ---
-
-┌──────────────────────────────────────────────────────────────┐
-│                        PROJECT STATUS                         │
-├──────────────────────────────────────────────────────────────┤
-│  This project is under development.                           │
-│  Bug fixing is ongoing and improvements are in progress.      │
-└──────────────────────────────────────────────────────────────┘
 
 ## 🏗️ Architecture
 
