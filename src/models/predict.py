@@ -35,7 +35,9 @@ def get_model():
                 logger.info(f"Model loaded from MLflow registry: {model_name}@champion")
             except Exception:
                 _model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
-                logger.info(f"Model loaded from MLflow registry: {model_name}/Production")
+                logger.info(
+                    f"Model loaded from MLflow registry: {model_name}/Production"
+                )
         except Exception as e:
             logger.warning(f"MLflow unavailable: {e}. Loading local model.")
             local_path = "models/trained/xgboost.pkl"
