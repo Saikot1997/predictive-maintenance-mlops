@@ -180,7 +180,7 @@ docker compose up -d
 Starts 10 services: PostgreSQL, MLflow, Redis, Zookeeper, Kafka, FastAPI,
 Kafka Producer, Kafka Consumer, Prometheus, Grafana.
 
-Wait ~35 seconds, then check everything is healthy:
+Wait ~60 seconds, then check everything is healthy:
 
 ```bash
 docker compose ps
@@ -492,7 +492,8 @@ make clean          # Remove .pyc, __pycache__, .pytest_cache
 
 ## 📊 Monitoring
 
-### Grafana (http://localhost:3000 — admin/admin)
+### Grafana (http://localhost:3000)
+Login: email = `admin`, password = `admin`. First login will ask you to set a new password — you can skip it.
 Dashboard is auto-provisioned on startup. Panels:
 - Total predictions counter
 - HIGH risk predictions counter (red alert)
