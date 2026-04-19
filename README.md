@@ -583,7 +583,7 @@ docker compose --profile bentoml up -d bentoml
 cd ~/Projects/predictive-maintenance-mlops
 source venv/bin/activate
 docker compose up -d
-sleep 35 && docker compose ps
+sleep 60 && docker compose ps
 curl -s http://localhost:8000/health
 ```
 
