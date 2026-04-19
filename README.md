@@ -15,6 +15,37 @@ built on the [AI4I 2020 Predictive Maintenance Dataset](https://www.kaggle.com/d
 
 ---
 
+## 📖 About This Project
+
+This project builds a **complete, production-ready MLOps pipeline** for predicting industrial
+equipment failure using real sensor data. It is designed to demonstrate every layer of a
+modern ML system — from raw data ingestion to real-time inference, monitoring, and CI/CD.
+
+### What it does
+- Ingests sensor readings from 5 simulated industrial machines via **Apache Kafka**
+- Preprocesses and engineers 6 physics-based features from raw sensor data
+- Trains **RandomForest** and **XGBoost** classifiers to predict machine failure (binary: fail / no fail)
+- Tracks all experiments, metrics, and model versions in **MLflow** (PostgreSQL backend)
+- Serves the best model ("champion") via a **FastAPI** REST API with **Redis** caching
+- Monitors prediction metrics and API performance with **Prometheus** and **Grafana**
+- Detects data drift between training and production distributions using **Evidently AI**
+- Versions data and pipeline stages with **DVC** (Google Drive remote)
+- Automates testing, linting, and Docker image publishing via **GitHub Actions CI/CD**
+
+### Why this project
+Predicting equipment failure before it happens saves factories from costly unplanned downtime.
+This project uses the [AI4I 2020 dataset](https://www.kaggle.com/datasets/stephanmatzka/predictive-maintenance-dataset-ai4i-2020)
+— a realistic simulation of CNC machine sensor data with a 3.4% failure rate — to demonstrate
+how a production ML system handles class imbalance, real-time streaming, caching, and drift monitoring.
+
+### Key results
+| Model | F1 Score | ROC-AUC |
+|---|---|---|
+| RandomForest | 0.748 | 0.978 |
+| XGBoost (Champion) | **0.824** | **0.987** |
+
+---
+
 ## ✨ Tech Stack
 
 | Category | Tools |
