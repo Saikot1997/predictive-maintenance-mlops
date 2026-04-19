@@ -209,7 +209,7 @@ If `pm_mlflow` shows `unhealthy`, wait 20 more seconds — it waits for PostgreS
 # Step 5a: Preprocess → generates data/processed/train.parquet and test.parquet
 python -m src.data.preprocess
 
-# Step 6b: Train models → registers best model in MLflow Registry
+# Step 5b: Train models → registers best model in MLflow Registry
 python -m src.models.train
 ```
 
@@ -223,7 +223,7 @@ Model alias 'champion' set -> version 1
 
 > The training script connects to MLflow at `http://localhost:5000` (the running Docker container).
 
-### Step 7 — Verify end-to-end
+### Step 6 — Verify end-to-end
 
 ```bash
 # Health check (should show redis: true)
