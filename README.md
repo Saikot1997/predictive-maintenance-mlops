@@ -172,30 +172,10 @@ pm_grafana      Up             <- Dashboard at :3000
 
 If `pm_mlflow` shows `unhealthy`, wait 20 more seconds — it waits for PostgreSQL to fully start.
 
-### Step 5 — Verify the dataset
-
-The dataset is already in the repo at `data/raw/predictive_maintenance.csv`.
-**You do NOT need a Kaggle account.**
+### Step 5 — Run the ML pipeline
 
 ```bash
-wc -l data/raw/predictive_maintenance.csv
-# Expected: 10001 (10000 data rows + 1 header)
-```
-
-If the file is missing (only a `.dvc` pointer file exists), pull it from Google Drive:
-```bash
-dvc pull data/raw/predictive_maintenance.csv
-# First run: opens browser for Google OAuth — approve and credentials are cached
-```
-
-### Step 6 — Run the ML pipeline
-
-Ensure your venv is active and Docker services are running.
-
-```bash
-source venv/bin/activate
-
-# Step 6a: Preprocess → generates data/processed/train.parquet and test.parquet
+# Step 5a: Preprocess → generates data/processed/train.parquet and test.parquet
 python -m src.data.preprocess
 
 # Step 6b: Train models → registers best model in MLflow Registry
