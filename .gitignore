@@ -48,4 +48,4 @@ htmlcov/
 
 # Logs
 *.log
-logs/
+logs/data/reports/*.html
