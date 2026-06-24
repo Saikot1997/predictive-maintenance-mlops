@@ -8,7 +8,7 @@
 [![DVC](https://img.shields.io/badge/dvc-3.50-945DD6.svg)](https://dvc.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A **production-grade MLOps pipeline** that predicts industrial equipment failure before it happens,
+A **An MLOps pipeline with production-ready architecture** that predicts industrial equipment failure before it happens,
 built on the [AI4I 2020 Predictive Maintenance Dataset](https://www.kaggle.com/datasets/stephanmatzka/predictive-maintenance-dataset-ai4i-2020).
 
 **Model performance (XGBoost Champion):** F1 = **0.824** | ROC-AUC = **0.987**
